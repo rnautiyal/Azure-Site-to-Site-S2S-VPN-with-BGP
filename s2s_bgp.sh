@@ -455,4 +455,3 @@ ssh $admin_username@$site2_gw_pip "sudo ipsec status && sudo vtysh -c 'show ip r
 #az group delete -n $site1_rg_name --no-wait --yes
 #az group delete -n $site2_rg_name --no-wait --yes
 #rm $site_gw_cloudinit_file
-##############
