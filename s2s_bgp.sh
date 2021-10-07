@@ -34,8 +34,8 @@ site2_gw_name='site2-gw'
 site2_gw_vti_address='172.16.0.254'
 site2_gw_asn=65052
 site2_vm_name='site2-linvm'
-admin_username='vpnadmin'
-admin_passwd='Pass#123!123'
+admin_username='waddahs'
+admin_passwd='Test#123#123'
 psksecret=secret12345
 tag="scenario=s2s-bgp-bgp"
 site_gw_cloudinit_file=/tmp/site_gw_cloudinit.txt
