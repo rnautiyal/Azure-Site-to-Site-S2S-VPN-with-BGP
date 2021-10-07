@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/bash
 # This scripts simulates Azure S2S VPN with BGP.
 # variables
 cloud_location='uaenorth'
