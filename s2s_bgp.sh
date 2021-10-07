@@ -309,7 +309,7 @@ EOF
 # Copy files to site1 gw and restart ipsec daemon
 username=$(whoami)
 scp $psk_file $ipsec_file $ipsec_vti_file $bgpd_conf_file $site1_gw_pip:/home/$username
-ssh -n -o BatchMode=yes -o StrictHostKeyChecking=no $site1_gw_pip "sudo mv ./ipsec.* /etc/ && sudo mv ./ipsec-vti.sh /etc/strongswan.d/ && chmod +x /etc/strongswan.d/ipsec-vti.sh &&  sudo mv ./bgpd.conf /etc/quagga/ && sudo service bgpd restart && sudo systemctl restart ipsec"
+ssh -n -o BatchMode=yes -o StrictHostKeyChecking=no $site1_gw_pip "sudo mv /home/$username/ipsec.* /etc/ && sudo mv /home/$username/ipsec-vti.sh /etc/strongswan.d/ && chmod +x /etc/strongswan.d/ipsec-vti.sh &&  sudo mv /home/$username/bgpd.conf /etc/quagga/ && sudo service bgpd restart && sudo systemctl restart ipsec"
 
 # deleting files from local session
 rm $psk_file && rm $ipsec_file && rm $ipsec_vti_file && rm $bgpd_conf_file
@@ -440,7 +440,7 @@ EOF
 # Copy files to site2 gw and restart ipsec daemon
 username=$(whoami)
 scp $psk_file $ipsec_file $ipsec_vti_file $bgpd_conf_file $site2_gw_pip:/home/$username
-ssh -n -o BatchMode=yes -o StrictHostKeyChecking=no $site2_gw_pip "sudo mv ./ipsec.* /etc/ && sudo mv ./ipsec-vti.sh /etc/strongswan.d/ && chmod +x /etc/strongswan.d/ipsec-vti.sh &&  sudo mv ./bgpd.conf /etc/quagga/ && sudo service bgpd restart && sudo systemctl restart ipsec"
+ssh -n -o BatchMode=yes -o StrictHostKeyChecking=no $site2_gw_pip "sudo mv /home/$username/ipsec.* /etc/ && sudo mv /home/$username/ipsec-vti.sh /etc/strongswan.d/ && chmod +x /etc/strongswan.d/ipsec-vti.sh &&  sudo mv /home/$username/bgpd.conf /etc/quagga/ && sudo service bgpd restart && sudo systemctl restart ipsec"
 # deleting files from local session
 rm $psk_file && rm $ipsec_file && rm $ipsec_vti_file && rm $bgpd_conf_file
 ###### End of site2 gw configuration
