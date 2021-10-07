@@ -66,7 +66,7 @@ function wait_until_finished {
      wait_interval=15
      resource_id=$1
      resource_name=$(echo $resource_id | cut -d/ -f 9)
-     echo "Waiting for resource $resource_name to finish provisioning..."
+     echo -e "\e[1;36m Waiting for resource $resource_name to finish provisioning...\e[0m"
      start_time=`date +%s`
      state=$(az resource show --id $resource_id --query properties.provisioningState -o tsv)
      until [[ "$state" == "Succeeded" ]] || [[ "$state" == "Failed" ]] || [[ -z "$state" ]]
@@ -81,14 +81,16 @@ function wait_until_finished {
         run_time=$(expr `date +%s` - $start_time)
         ((minutes=${run_time}/60))
         ((seconds=${run_time}%60))
-        echo "Resource $resource_name provisioning state is $state, wait time $minutes minutes and $seconds seconds"
+        echo -e "\e[1;32mResource $resource_name provisioning state is $state, wait time $minutes minutes and $seconds seconds\e[0m"
      fi
 }
 # resource groups
+echo -e "\e[1;36m Creating Resource Groups \e[0m"
 az group create --location $cloud_location -n $cloud_rg_name --tags $tag
 az group create --location $site1_location -n $site1_rg_name --tags $tag
 az group create --location $site2_location -n $site2_rg_name --tags $tag
 
+echo -e "\e[1;36m Creating $cloud_vnet_name\e[0m"
 # cloud-vnet
 az network vnet create -g $cloud_rg_name -n $cloud_vnet_name --address-prefixes $cloud_vnet_address --subnet-name $cloud_mgmt_subnet_name --subnet-prefixes $cloud_mgmt_subnet_address --tags $tag
 az network vnet subnet create --address-prefixes $cloud_gatewaysubnet_address -n gatewaysubnet -g $cloud_rg_name --vnet-name $cloud_vnet_name
@@ -105,6 +107,7 @@ az network public-ip create -n "$cloud_vm_name-pubip" -g $cloud_rg_name --alloca
 az network nic create -n "$cloud_vm_name-nic" --vnet-name $cloud_vnet_name -g $cloud_rg_name --subnet $cloud_mgmt_subnet_name --private-ip-address 10.10.1.6 --public-ip-address "$cloud_vm_name-pubip" --tags $tag
 az vm create -n $cloud_vm_name -g $cloud_rg_name --image ubuntults --nics "$cloud_vm_name-nic" --os-disk-name "$cloud_vm_name-os-disk" --size standard_b1s --generate-ssh-keys --tags $tag --no-wait
 
+echo -e "\e[1;36m Creating $site1_vnet_name\e[0m"
 # site1-vnet
 az network vnet create -g $site1_rg_name -n $site1_vnet_name --address-prefixes $site1_vnet_address --subnet-name $site1_lan_subnet_name --subnet-prefixes $site1_lan_subnet_address --tags $tag
 az network vnet subnet create --address-prefixes $site1_dmz_subnet_address -n $site1_dmz_subnet_name -g $site1_rg_name --vnet-name $site1_vnet_name
@@ -117,19 +120,20 @@ az network vnet subnet update -n $site1_lan_subnet_name -g  $site1_rg_name --vne
 az network public-ip create -n "$site1_gw_name-pubip" -g $site1_rg_name --allocation-method static --sku basic --tags $tag
 az network nic create -n "$site1_gw_name-dmz-nic" --vnet-name $site1_vnet_name -g $site1_rg_name --subnet $site1_dmz_subnet_name --ip-forwarding true --private-ip-address 192.168.0.4 --public-ip-address "$site1_gw_name-pubip" --tags $tag
 az vm create -n $site1_gw_name -g $site1_rg_name --image ubuntults --nics "$site1_gw_name-dmz-nic" --os-disk-name "$site1_gw_name-os-disk" --size standard_b1s --generate-ssh-keys --custom-data $site_gw_cloudinit_file --tags $tag --no-wait
-
 # site1-vm (linux)
 az network public-ip create -n "$site1_vm_name-pubip" -g $site1_rg_name --allocation-method static --sku basic --tags $tag
 az network nic create -n "$site1_vm_name-nic" --vnet-name $site1_vnet_name -g $site1_rg_name --subnet $site1_lan_subnet_name --private-ip-address 192.168.1.6 --public-ip-address "$site1_vm_name-pubip" --tags $tag
 az vm create -n $site1_vm_name -g $site1_rg_name --image ubuntults --nics "$site1_vm_name-nic" --os-disk-name "$site1_vm_name-os-disk" --size standard_b1s --generate-ssh-keys --tags $tag --no-wait
 
 # get site1 gw details
+echo -e "\e[1;36m Getting $site1_gw_name details\e[0m"
 site1_gw_vm_id=$(az vm show -n $site1_gw_name -g $site1_rg_name --query 'id' -o tsv)
 wait_until_finished $site1_gw_vm_id
 site1_gw_nic_id=$(az vm show -n $site1_gw_name -g $site1_rg_name --query 'networkProfile.networkInterfaces[0].id' -o tsv)
 site1_gw_pip=$(az network public-ip show -n "$site1_gw_name-pubip" -g $site1_rg_name --query ipAddress -o tsv) && echo $site1_gw_pip
 site1_gw_private_ip=$(az network nic show --ids $site1_gw_nic_id --query 'ipConfigurations[0].privateIpAddress' -o tsv) && echo $site1_gw_private_ip
 
+echo -e "\e[1;36m Creating $site2_vnet_name\e[0m"
 # site2-vnet
 az network vnet create -g $site2_rg_name -n $site2_vnet_name --address-prefixes $site2_vnet_address --subnet-name $site2_lan_subnet_name --subnet-prefixes $site2_lan_subnet_address --tags $tag
 az network vnet subnet create --address-prefixes $site2_dmz_subnet_address -n $site1_dmz_subnet_name -g $site2_rg_name --vnet-name $site2_vnet_name
@@ -147,18 +151,21 @@ az network public-ip create -n "$site2_vm_name-pubip" -g $site2_rg_name --alloca
 az network nic create -n "$site2_vm_name-nic" --vnet-name $site2_vnet_name -g $site2_rg_name --subnet $site2_lan_subnet_name --private-ip-address 172.16.1.6 --public-ip-address "$site2_vm_name-pubip" --tags $tag
 az vm create -n $site2_vm_name -g $site2_rg_name --image ubuntults --nics "$site2_vm_name-nic" --os-disk-name "$site2_vm_name-os-disk" --size standard_b1s --generate-ssh-keys --tags $tag --no-wait
 # Get site2 gw details
+echo -e "\e[1;36m Getting $site2_gw_name details\e[0m"
 site2_gw_vm_id=$(az vm show -n $site2_gw_name -g $site2_rg_name --query 'id' -o tsv)
 wait_until_finished $site2_gw_vm_id
 site2_gw_nic_id=$(az vm show -n $site2_gw_name -g $site2_rg_name --query 'networkProfile.networkInterfaces[0].id' -o tsv)
 site2_gw_pip=$(az network public-ip show -n "$site2_gw_name-pubip" -g $site2_rg_name --query ipAddress -o tsv) && echo $site2_gw_pip
 site2_gw_private_ip=$(az network nic show --ids $site2_gw_nic_id --query 'ipConfigurations[0].privateIpAddress' -o tsv) && echo $site2_gw_private_ip
 
+echo -e "\e[1;36m Creating Local Network Gateways\e[0m"
 # site1 local network gateway
 az network local-gateway create --gateway-ip-address $site1_gw_pip -n $site1_gw_name -g $cloud_rg_name --local-address-prefixes "$site1_gw_private_ip/32" --asn $site1_gw_asn --bgp-peering-address $site1_gw_private_ip --tags $tag --no-wait
 
 # site2 local network gateway
 az network local-gateway create --gateway-ip-address $site2_gw_pip -n $site2_gw_name -g $cloud_rg_name --local-address-prefixes "$site2_gw_private_ip/32" --asn $site2_gw_asn --bgp-peering-address $site2_gw_private_ip --tags $tag --no-wait
 
+echo -e "\e[1;36m Creating on-premises routing tables\e[0m"
 # site1 route table
 az network route-table create -n site1-routing -g $site1_rg_name --tags $tag
 az network route-table route create --address-prefix $cloud_vnet_address -n to-cloud -g $site1_rg_name --next-hop-type virtualappliance --route-table-name site1-routing --next-hop-ip-address $site1_gw_private_ip
@@ -175,9 +182,9 @@ az network vnet subnet update --vnet-name $site2_vnet_name -n $site2_lan_subnet_
 cloud_vpngw_id=$(az network vnet-gateway show -n $cloud_gw_name -g $cloud_rg_name --query 'id' -o tsv)
 wait_until_finished $cloud_vpngw_id
 
+echo -e "\e[1;36m Creating VPN Connections from VPN Gateway to on-premises sites\e[0m"
 # s2s vpn connection with site1
 az network vpn-connection create -n cloud-s2s-bgp-site1 -g $cloud_rg_name --vnet-gateway1 $cloud_gw_name --shared-key $psksecret --local-gateway2 $site1_gw_name --enable-bgp --tags $tag
-
 # s2s vpn connection with site2
 az network vpn-connection create -n cloud-s2s-bgp-site2 -g $cloud_rg_name --vnet-gateway1 $cloud_gw_name --shared-key $psksecret --local-gateway2 $site2_gw_name --enable-bgp --tags $tag
 
@@ -186,7 +193,7 @@ vpngw_pip_0=$(az network vnet-gateway show -n $cloud_gw_name -g $cloud_rg_name -
 vpngw_bgp_address=$(az network vnet-gateway show -n $cloud_gw_name -g $cloud_rg_name --query 'bgpSettings.bgpPeeringAddresses[0].defaultBgpIpAddresses' -o tsv) && echo $vpngw_bgp_address
 
 ###### site1 gw configuration #########
-echo "Copying confiuration files to $site1_gw_name"
+echo -e "\e[1;36m Copying confiuration files to $site1_gw_name\e[0m"
 # ipsec.secrets
 psk_file=/tmp/ipsec.secrets
 cat <<EOF > $psk_file
@@ -317,7 +324,7 @@ rm $psk_file && rm $ipsec_file && rm $ipsec_vti_file && rm $bgpd_conf_file
 
 
 ###### site2 gw configuration ##########
-echo "Copying confiuration files to $site2_gw_name"
+echo -e "\e[1;36m Copying confiuration files to $site2_gw_name\e[0m"
 # ipsec.secrets
 psk_file=/tmp/ipsec.secrets
 cat <<EOF > $psk_file
@@ -446,7 +453,7 @@ rm $psk_file && rm $ipsec_file && rm $ipsec_vti_file && rm $bgpd_conf_file
 ###### End of site2 gw configuration
 
 # Checking VPN tunnel and BGP status
-echo "Checking VPN tunnel and BGP status on $site1_gw_name and $site2_gw_name"
+echo -e "\e[1;36m Checking VPN tunnel and BGP status on $site1_gw_name and $site2_gw_name\e[0m"
 ssh -n -o BatchMode=yes -o StrictHostKeyChecking=no $site1_gw_pip "sudo ipsec status && sudo vtysh -c 'show ip route bgp'"
 ssh -n -o BatchMode=yes -o StrictHostKeyChecking=no $site2_gw_pip "sudo ipsec status && sudo vtysh -c 'show ip route bgp'"
 
