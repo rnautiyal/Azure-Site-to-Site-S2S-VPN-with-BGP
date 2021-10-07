@@ -1,6 +1,6 @@
 # Azure-Site-to-Site-S2S-VPN-with-BGP
 This a linux shell scripts that can be used to create an environment to simulate Azure S2S VPN with BGP
-![s2s-bpg.png](/s2s-bpg.png)
+![diagram-s2s-bgp.png](/diagram-s2s-bgp.png)
 
 # How to use it
 1. Connect to [Azure Cloud Shell](https://shell.azure.com/).
