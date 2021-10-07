@@ -35,8 +35,6 @@ site2_gw_name='site2-gw'
 site2_gw_vti_address='172.16.0.254'
 site2_gw_asn=65052
 site2_vm_name='site2-linvm'
-admin_username='vpnadmin'
-admin_passwd='Pass#123!123'
 psksecret=secret12345
 tag="scenario=s2s-bgp-bgp"
 site_gw_cloudinit_file=/tmp/site_gw_cloudinit.txt
@@ -105,7 +103,7 @@ az network vnet-gateway create -n $cloud_gw_name --public-ip-addresses "$cloud_g
 # cloud-vm (linux)
 az network public-ip create -n "$cloud_vm_name-pubip" -g $cloud_rg_name --allocation-method static --sku basic --tags $tag
 az network nic create -n "$cloud_vm_name-nic" --vnet-name $cloud_vnet_name -g $cloud_rg_name --subnet $cloud_mgmt_subnet_name --private-ip-address 10.10.1.6 --public-ip-address "$cloud_vm_name-pubip" --tags $tag
-az vm create -n $cloud_vm_name -g $cloud_rg_name --image ubuntults --nics "$cloud_vm_name-nic" --os-disk-name "$cloud_vm_name-os-disk" --size standard_b1s --admin-username $admin_username --admin-password $admin_passwd --tags $tag --no-wait
+az vm create -n $cloud_vm_name -g $cloud_rg_name --image ubuntults --nics "$cloud_vm_name-nic" --os-disk-name "$cloud_vm_name-os-disk" --size standard_b1s --generate-ssh-keys --tags $tag --no-wait
 
 # site1-vnet
 az network vnet create -g $site1_rg_name -n $site1_vnet_name --address-prefixes $site1_vnet_address --subnet-name $site1_lan_subnet_name --subnet-prefixes $site1_lan_subnet_address --tags $tag
@@ -118,12 +116,12 @@ az network vnet subnet update -n $site1_lan_subnet_name -g  $site1_rg_name --vne
 # site1-gw vm
 az network public-ip create -n "$site1_gw_name-pubip" -g $site1_rg_name --allocation-method static --sku basic --tags $tag
 az network nic create -n "$site1_gw_name-dmz-nic" --vnet-name $site1_vnet_name -g $site1_rg_name --subnet $site1_dmz_subnet_name --ip-forwarding true --private-ip-address 192.168.0.4 --public-ip-address "$site1_gw_name-pubip" --tags $tag
-az vm create -n $site1_gw_name -g $site1_rg_name --image ubuntults --nics "$site1_gw_name-dmz-nic" --os-disk-name "$site1_gw_name-os-disk" --size standard_b1s --admin-username $admin_username --admin-password $admin_passwd --custom-data $site_gw_cloudinit_file --tags $tag --no-wait
+az vm create -n $site1_gw_name -g $site1_rg_name --image ubuntults --nics "$site1_gw_name-dmz-nic" --os-disk-name "$site1_gw_name-os-disk" --size standard_b1s --generate-ssh-keys --custom-data $site_gw_cloudinit_file --tags $tag --no-wait
 
 # site1-vm (linux)
 az network public-ip create -n "$site1_vm_name-pubip" -g $site1_rg_name --allocation-method static --sku basic --tags $tag
 az network nic create -n "$site1_vm_name-nic" --vnet-name $site1_vnet_name -g $site1_rg_name --subnet $site1_lan_subnet_name --private-ip-address 192.168.1.6 --public-ip-address "$site1_vm_name-pubip" --tags $tag
-az vm create -n $site1_vm_name -g $site1_rg_name --image ubuntults --nics "$site1_vm_name-nic" --os-disk-name "$site1_vm_name-os-disk" --size standard_b1s --admin-username $admin_username --admin-password $admin_passwd --tags $tag --no-wait
+az vm create -n $site1_vm_name -g $site1_rg_name --image ubuntults --nics "$site1_vm_name-nic" --os-disk-name "$site1_vm_name-os-disk" --size standard_b1s --generate-ssh-keys --tags $tag --no-wait
 
 # get site1 gw details
 site1_gw_vm_id=$(az vm show -n $site1_gw_name -g $site1_rg_name --query 'id' -o tsv)
@@ -143,11 +141,11 @@ az network vnet subnet update -n $site2_lan_subnet_name -g  $site2_rg_name --vne
 # site2-gateway vm
 az network public-ip create -n "$site2_gw_name-pubip" -g $site2_rg_name --allocation-method static --sku basic --tags $tag
 az network nic create -n "$site2_gw_name-dmz-nic" --vnet-name $site2_vnet_name -g $site2_rg_name --subnet $site1_dmz_subnet_name --ip-forwarding true --private-ip-address 172.16.0.4 --public-ip-address "$site2_gw_name-pubip" --tags $tag
-az vm create -n $site2_gw_name -g $site2_rg_name --image ubuntults --nics "$site2_gw_name-dmz-nic" --os-disk-name "$site2_gw_name-os-disk" --size standard_b1s --admin-username $admin_username --admin-password $admin_passwd --custom-data $site_gw_cloudinit_file --tags $tag --no-wait
+az vm create -n $site2_gw_name -g $site2_rg_name --image ubuntults --nics "$site2_gw_name-dmz-nic" --os-disk-name "$site2_gw_name-os-disk" --size standard_b1s --generate-ssh-keys --custom-data $site_gw_cloudinit_file --tags $tag --no-wait
 # site2-vm (linux)
 az network public-ip create -n "$site2_vm_name-pubip" -g $site2_rg_name --allocation-method static --sku basic --tags $tag
 az network nic create -n "$site2_vm_name-nic" --vnet-name $site2_vnet_name -g $site2_rg_name --subnet $site2_lan_subnet_name --private-ip-address 172.16.1.6 --public-ip-address "$site2_vm_name-pubip" --tags $tag
-az vm create -n $site2_vm_name -g $site2_rg_name --image ubuntults --nics "$site2_vm_name-nic" --os-disk-name "$site2_vm_name-os-disk" --size standard_b1s --admin-username $admin_username --admin-password $admin_passwd --tags $tag --no-wait
+az vm create -n $site2_vm_name -g $site2_rg_name --image ubuntults --nics "$site2_vm_name-nic" --os-disk-name "$site2_vm_name-os-disk" --size standard_b1s --generate-ssh-keys --tags $tag --no-wait
 # Get site2 gw details
 site2_gw_vm_id=$(az vm show -n $site2_gw_name -g $site2_rg_name --query 'id' -o tsv)
 wait_until_finished $site2_gw_vm_id
@@ -309,8 +307,9 @@ line vty
 EOF
 
 # Copy files to site1 gw and restart ipsec daemon
-scp $psk_file $ipsec_file $ipsec_vti_file $bgpd_conf_file $admin_username@$site1_gw_pip:/home/$admin_username
-ssh $admin_username@$site1_gw_pip "sudo mv ./ipsec.* /etc/ && sudo mv ./ipsec-vti.sh /etc/strongswan.d/ && chmod +x /etc/strongswan.d/ipsec-vti.sh &&  sudo mv ./bgpd.conf /etc/quagga/ && sudo service bgpd restart && sudo systemctl restart ipsec"
+username=$(whoami)
+scp $psk_file $ipsec_file $ipsec_vti_file $bgpd_conf_file $site1_gw_pip:/home/$username
+ssh -n -o BatchMode=yes -o StrictHostKeyChecking=no $site1_gw_pip "sudo mv ./ipsec.* /etc/ && sudo mv ./ipsec-vti.sh /etc/strongswan.d/ && chmod +x /etc/strongswan.d/ipsec-vti.sh &&  sudo mv ./bgpd.conf /etc/quagga/ && sudo service bgpd restart && sudo systemctl restart ipsec"
 
 # deleting files from local session
 rm $psk_file && rm $ipsec_file && rm $ipsec_vti_file && rm $bgpd_conf_file
@@ -439,16 +438,17 @@ line vty
 EOF
 
 # Copy files to site2 gw and restart ipsec daemon
-scp $psk_file $ipsec_file $ipsec_vti_file $bgpd_conf_file $admin_username@$site2_gw_pip:/home/$admin_username
-ssh $admin_username@$site2_gw_pip "sudo mv ./ipsec.* /etc/ && sudo mv ./ipsec-vti.sh /etc/strongswan.d/ && chmod +x /etc/strongswan.d/ipsec-vti.sh &&  sudo mv ./bgpd.conf /etc/quagga/ && sudo service bgpd restart && sudo systemctl restart ipsec"
+username=$(whoami)
+scp $psk_file $ipsec_file $ipsec_vti_file $bgpd_conf_file $site2_gw_pip:/home/$username
+ssh -n -o BatchMode=yes -o StrictHostKeyChecking=no $site2_gw_pip "sudo mv ./ipsec.* /etc/ && sudo mv ./ipsec-vti.sh /etc/strongswan.d/ && chmod +x /etc/strongswan.d/ipsec-vti.sh &&  sudo mv ./bgpd.conf /etc/quagga/ && sudo service bgpd restart && sudo systemctl restart ipsec"
 # deleting files from local session
 rm $psk_file && rm $ipsec_file && rm $ipsec_vti_file && rm $bgpd_conf_file
 ###### End of site2 gw configuration
 
 # Checking VPN tunnel and BGP status
 echo "Checking VPN tunnel and BGP status on $site1_gw_name and $site2_gw_name"
-ssh $admin_username@$site1_gw_pip "sudo ipsec status && sudo vtysh -c 'show ip route bgp'"
-ssh $admin_username@$site2_gw_pip "sudo ipsec status && sudo vtysh -c 'show ip route bgp'"
+ssh -n -o BatchMode=yes -o StrictHostKeyChecking=no $site1_gw_pip "sudo ipsec status && sudo vtysh -c 'show ip route bgp'"
+ssh -n -o BatchMode=yes -o StrictHostKeyChecking=no $site2_gw_pip "sudo ipsec status && sudo vtysh -c 'show ip route bgp'"
 
 
 ## Clean up ##
