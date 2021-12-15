@@ -96,8 +96,8 @@ az network vnet create -g $cloud_rg_name -n $cloud_vnet_name --address-prefixes 
 az network vnet subnet create --address-prefixes $cloud_gatewaysubnet_address -n gatewaysubnet -g $cloud_rg_name --vnet-name $cloud_vnet_name
 # cloud-nsg
 az network nsg create -n cloud-nsg -g $cloud_rg_name --tags $tag
-az network nsg rule create -n allow_ssh --nsg-name cloud-nsg -g $cloud_rg_name --priority 100 --access allow --protocol tcp --source-address-prefixes '*' --source-port-ranges '*' --destination-address-prefixes '*' --destination-port-ranges 22
-az network nsg rule create -n allow_icmp --nsg-name cloud-nsg -g $cloud_rg_name --priority 101 --access allow --protocol Icmp --source-address-prefixes '*' --destination-address-prefixes '*' --destination-port-ranges '*'
+az network nsg rule create -n allow_ssh --nsg-name cloud-nsg -g $cloud_rg_name --priority 100 --access allow --protocol tcp --source-address-prefixes '*' --source-port-ranges '*' --destination-address-prefixes '*' --destination-port-ranges 22 --direction Inbound
+az network nsg rule create -n allow_icmp --nsg-name cloud-nsg -g $cloud_rg_name --priority 101 --access allow --protocol Icmp --source-address-prefixes '*' --destination-address-prefixes '*' --destination-port-ranges '*' --direction Inbound
 az network vnet subnet update -n $cloud_mgmt_subnet_name -g  $cloud_rg_name --vnet-name $cloud_vnet_name --nsg cloud-nsg
 # Cloud vpn gateway
 az network public-ip create -n "$cloud_gw_name-pubip" -g $cloud_rg_name --allocation-method dynamic --sku basic --tags $tag
@@ -113,8 +113,8 @@ az network vnet create -g $site1_rg_name -n $site1_vnet_name --address-prefixes 
 az network vnet subnet create --address-prefixes $site1_dmz_subnet_address -n $site1_dmz_subnet_name -g $site1_rg_name --vnet-name $site1_vnet_name
 #site1-nsg
 az network nsg create -n site1-nsg -g $site1_rg_name --tags $tag
-az network nsg rule create -n allow_ssh --nsg-name site1-nsg -g $site1_rg_name --priority 100 --access allow --protocol tcp --source-address-prefixes '*' --source-port-ranges '*' --destination-address-prefixes '*' --destination-port-ranges 22
-az network nsg rule create -n allow_icmp --nsg-name site1-nsg -g $site1_rg_name --priority 101 --access allow --protocol Icmp --source-address-prefixes '*' --destination-address-prefixes '*' --destination-port-ranges '*'
+az network nsg rule create -n allow_ssh --nsg-name site1-nsg -g $site1_rg_name --priority 100 --access allow --protocol tcp --source-address-prefixes '*' --source-port-ranges '*' --destination-address-prefixes '*' --destination-port-ranges 22 --direction Inbound
+az network nsg rule create -n allow_icmp --nsg-name site1-nsg -g $site1_rg_name --priority 101 --access allow --protocol Icmp --source-address-prefixes '*' --destination-address-prefixes '*' --destination-port-ranges '*' --direction Inbound
 az network vnet subnet update -n $site1_lan_subnet_name -g  $site1_rg_name --vnet-name $site1_vnet_name --nsg site1-nsg
 # site1-gw vm
 az network public-ip create -n "$site1_gw_name-pubip" -g $site1_rg_name --allocation-method static --sku basic --tags $tag
