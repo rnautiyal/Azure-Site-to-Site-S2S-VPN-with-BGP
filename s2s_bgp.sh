@@ -85,42 +85,48 @@ function wait_until_finished {
      fi
 }
 # resource groups
-echo -e "\e[1;36m Creating Resource Groups \e[0m"
+echo -e "\e[1;36m Deploying Resource Groups \e[0m"
 az group create --location $cloud_location -n $cloud_rg_name --tags $tag
 az group create --location $site1_location -n $site1_rg_name --tags $tag
 az group create --location $site2_location -n $site2_rg_name --tags $tag
 
-echo -e "\e[1;36m Creating $cloud_vnet_name\e[0m"
+echo -e "\e[1;36m Deploying $cloud_vnet_name\e[0m"
 # cloud-vnet
 az network vnet create -g $cloud_rg_name -n $cloud_vnet_name --address-prefixes $cloud_vnet_address --subnet-name $cloud_mgmt_subnet_name --subnet-prefixes $cloud_mgmt_subnet_address --tags $tag
 az network vnet subnet create --address-prefixes $cloud_gatewaysubnet_address -n gatewaysubnet -g $cloud_rg_name --vnet-name $cloud_vnet_name
 # cloud-nsg
+echo -e "\e[1;36m Deploying cloud-nsg\e[0m"
 az network nsg create -n cloud-nsg -g $cloud_rg_name --tags $tag
 az network nsg rule create -n allow_ssh --nsg-name cloud-nsg -g $cloud_rg_name --priority 100 --access allow --protocol tcp --source-address-prefixes '*' --source-port-ranges '*' --destination-address-prefixes '*' --destination-port-ranges 22 --direction Inbound
 az network nsg rule create -n allow_icmp --nsg-name cloud-nsg -g $cloud_rg_name --priority 101 --access allow --protocol Icmp --source-address-prefixes '*' --destination-address-prefixes '*' --destination-port-ranges '*' --direction Inbound
 az network vnet subnet update -n $cloud_mgmt_subnet_name -g  $cloud_rg_name --vnet-name $cloud_vnet_name --nsg cloud-nsg
 # Cloud vpn gateway
+echo -e "\e[1;36m Deploying $cloud_gw_name\e[0m"
 az network public-ip create -n "$cloud_gw_name-pubip" -g $cloud_rg_name --allocation-method dynamic --sku basic --tags $tag
 az network vnet-gateway create -n $cloud_gw_name --public-ip-addresses "$cloud_gw_name-pubip" -g $cloud_rg_name --vnet $cloud_vnet_name --gateway-type vpn --sku vpngw1 --vpn-type routebased --asn $cloud_gw_asn --tags $tag --no-wait
 # cloud-vm (linux)
+echo -e "\e[1;36m Deploying $cloud_vm_name\e[0m"
 az network public-ip create -n "$cloud_vm_name-pubip" -g $cloud_rg_name --allocation-method static --sku basic --tags $tag
 az network nic create -n "$cloud_vm_name-nic" --vnet-name $cloud_vnet_name -g $cloud_rg_name --subnet $cloud_mgmt_subnet_name --private-ip-address 10.10.1.6 --public-ip-address "$cloud_vm_name-pubip" --tags $tag
 az vm create -n $cloud_vm_name -g $cloud_rg_name --image ubuntults --nics "$cloud_vm_name-nic" --os-disk-name "$cloud_vm_name-os-disk" --size standard_b1s --generate-ssh-keys --tags $tag --no-wait
 
-echo -e "\e[1;36m Creating $site1_vnet_name\e[0m"
+echo -e "\e[1;36m Deploying $site1_vnet_name\e[0m"
 # site1-vnet
 az network vnet create -g $site1_rg_name -n $site1_vnet_name --address-prefixes $site1_vnet_address --subnet-name $site1_lan_subnet_name --subnet-prefixes $site1_lan_subnet_address --tags $tag
 az network vnet subnet create --address-prefixes $site1_dmz_subnet_address -n $site1_dmz_subnet_name -g $site1_rg_name --vnet-name $site1_vnet_name
 #site1-nsg
+echo -e "\e[1;36m Deploying site1-nsg\e[0m"
 az network nsg create -n site1-nsg -g $site1_rg_name --tags $tag
 az network nsg rule create -n allow_ssh --nsg-name site1-nsg -g $site1_rg_name --priority 100 --access allow --protocol tcp --source-address-prefixes '*' --source-port-ranges '*' --destination-address-prefixes '*' --destination-port-ranges 22 --direction Inbound
 az network nsg rule create -n allow_icmp --nsg-name site1-nsg -g $site1_rg_name --priority 101 --access allow --protocol Icmp --source-address-prefixes '*' --destination-address-prefixes '*' --destination-port-ranges '*' --direction Inbound
 az network vnet subnet update -n $site1_lan_subnet_name -g  $site1_rg_name --vnet-name $site1_vnet_name --nsg site1-nsg
 # site1-gw vm
+echo -e "\e[1;36m Deploying $site1_gw_name\e[0m"
 az network public-ip create -n "$site1_gw_name-pubip" -g $site1_rg_name --allocation-method static --sku basic --tags $tag
 az network nic create -n "$site1_gw_name-dmz-nic" --vnet-name $site1_vnet_name -g $site1_rg_name --subnet $site1_dmz_subnet_name --ip-forwarding true --private-ip-address 192.168.0.4 --public-ip-address "$site1_gw_name-pubip" --tags $tag
 az vm create -n $site1_gw_name -g $site1_rg_name --image ubuntults --nics "$site1_gw_name-dmz-nic" --os-disk-name "$site1_gw_name-os-disk" --size standard_b1s --generate-ssh-keys --custom-data $site_gw_cloudinit_file --tags $tag --no-wait
 # site1-vm (linux)
+echo -e "\e[1;36m Deploying $site1_vm_name\e[0m"
 az network public-ip create -n "$site1_vm_name-pubip" -g $site1_rg_name --allocation-method static --sku basic --tags $tag
 az network nic create -n "$site1_vm_name-nic" --vnet-name $site1_vnet_name -g $site1_rg_name --subnet $site1_lan_subnet_name --private-ip-address 192.168.1.6 --public-ip-address "$site1_vm_name-pubip" --tags $tag
 az vm create -n $site1_vm_name -g $site1_rg_name --image ubuntults --nics "$site1_vm_name-nic" --os-disk-name "$site1_vm_name-os-disk" --size standard_b1s --generate-ssh-keys --tags $tag --no-wait
@@ -133,20 +139,23 @@ site1_gw_nic_id=$(az vm show -n $site1_gw_name -g $site1_rg_name --query 'networ
 site1_gw_pip=$(az network public-ip show -n "$site1_gw_name-pubip" -g $site1_rg_name --query ipAddress -o tsv) && echo $site1_gw_pip
 site1_gw_private_ip=$(az network nic show --ids $site1_gw_nic_id --query 'ipConfigurations[0].privateIpAddress' -o tsv) && echo $site1_gw_private_ip
 
-echo -e "\e[1;36m Creating $site2_vnet_name\e[0m"
+echo -e "\e[1;36m Deploying $site2_vnet_name\e[0m"
 # site2-vnet
 az network vnet create -g $site2_rg_name -n $site2_vnet_name --address-prefixes $site2_vnet_address --subnet-name $site2_lan_subnet_name --subnet-prefixes $site2_lan_subnet_address --tags $tag
 az network vnet subnet create --address-prefixes $site2_dmz_subnet_address -n $site1_dmz_subnet_name -g $site2_rg_name --vnet-name $site2_vnet_name
 #site2-nsg
+echo -e "\e[1;36m Deploying site2-nsg\e[0m"
 az network nsg create -n site2-nsg -g $site2_rg_name --tags $tag
 az network nsg rule create -n allow_ssh --nsg-name site2-nsg -g $site2_rg_name --priority 100 --access allow --protocol tcp --source-address-prefixes '*' --source-port-ranges '*' --destination-address-prefixes '*' --destination-port-ranges 22
 az network nsg rule create -n allow_icmp --nsg-name site2-nsg -g $site2_rg_name --priority 101 --access allow --protocol Icmp --source-address-prefixes '*' --destination-address-prefixes '*' --destination-port-ranges '*'
 az network vnet subnet update -n $site2_lan_subnet_name -g  $site2_rg_name --vnet-name $site2_vnet_name --nsg site2-nsg
 # site2-gateway vm
+echo -e "\e[1;36m Deploying $site2_gw_name\e[0m"
 az network public-ip create -n "$site2_gw_name-pubip" -g $site2_rg_name --allocation-method static --sku basic --tags $tag
 az network nic create -n "$site2_gw_name-dmz-nic" --vnet-name $site2_vnet_name -g $site2_rg_name --subnet $site1_dmz_subnet_name --ip-forwarding true --private-ip-address 172.16.0.4 --public-ip-address "$site2_gw_name-pubip" --tags $tag
 az vm create -n $site2_gw_name -g $site2_rg_name --image ubuntults --nics "$site2_gw_name-dmz-nic" --os-disk-name "$site2_gw_name-os-disk" --size standard_b1s --generate-ssh-keys --custom-data $site_gw_cloudinit_file --tags $tag --no-wait
 # site2-vm (linux)
+echo -e "\e[1;36m Deploying $site2_vm_name\e[0m"
 az network public-ip create -n "$site2_vm_name-pubip" -g $site2_rg_name --allocation-method static --sku basic --tags $tag
 az network nic create -n "$site2_vm_name-nic" --vnet-name $site2_vnet_name -g $site2_rg_name --subnet $site2_lan_subnet_name --private-ip-address 172.16.1.6 --public-ip-address "$site2_vm_name-pubip" --tags $tag
 az vm create -n $site2_vm_name -g $site2_rg_name --image ubuntults --nics "$site2_vm_name-nic" --os-disk-name "$site2_vm_name-os-disk" --size standard_b1s --generate-ssh-keys --tags $tag --no-wait
@@ -158,14 +167,14 @@ site2_gw_nic_id=$(az vm show -n $site2_gw_name -g $site2_rg_name --query 'networ
 site2_gw_pip=$(az network public-ip show -n "$site2_gw_name-pubip" -g $site2_rg_name --query ipAddress -o tsv) && echo $site2_gw_pip
 site2_gw_private_ip=$(az network nic show --ids $site2_gw_nic_id --query 'ipConfigurations[0].privateIpAddress' -o tsv) && echo $site2_gw_private_ip
 
-echo -e "\e[1;36m Creating Local Network Gateways\e[0m"
+echo -e "\e[1;36m Deploying Local Network Gateways\e[0m"
 # site1 local network gateway
 az network local-gateway create --gateway-ip-address $site1_gw_pip -n $site1_gw_name -g $cloud_rg_name --local-address-prefixes "$site1_gw_private_ip/32" --asn $site1_gw_asn --bgp-peering-address $site1_gw_private_ip --tags $tag --no-wait
 
 # site2 local network gateway
 az network local-gateway create --gateway-ip-address $site2_gw_pip -n $site2_gw_name -g $cloud_rg_name --local-address-prefixes "$site2_gw_private_ip/32" --asn $site2_gw_asn --bgp-peering-address $site2_gw_private_ip --tags $tag --no-wait
 
-echo -e "\e[1;36m Creating on-premises routing tables\e[0m"
+echo -e "\e[1;36m Deploying on-premises routing tables\e[0m"
 # site1 route table
 az network route-table create -n site1-routing -g $site1_rg_name --tags $tag
 az network route-table route create --address-prefix $cloud_vnet_address -n to-cloud -g $site1_rg_name --next-hop-type virtualappliance --route-table-name site1-routing --next-hop-ip-address $site1_gw_private_ip
@@ -182,7 +191,7 @@ az network vnet subnet update --vnet-name $site2_vnet_name -n $site2_lan_subnet_
 cloud_vpngw_id=$(az network vnet-gateway show -n $cloud_gw_name -g $cloud_rg_name --query 'id' -o tsv)
 wait_until_finished $cloud_vpngw_id
 
-echo -e "\e[1;36m Creating VPN Connections from VPN Gateway to on-premises sites\e[0m"
+echo -e "\e[1;36m Deploying VPN Connections from VPN Gateway to on-premises sites\e[0m"
 # s2s vpn connection with site1
 az network vpn-connection create -n cloud-s2s-bgp-site1 -g $cloud_rg_name --vnet-gateway1 $cloud_gw_name --shared-key $psksecret --local-gateway2 $site1_gw_name --enable-bgp --tags $tag
 # s2s vpn connection with site2
